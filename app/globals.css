@@ -1,0 +1,14 @@
+input, button {
+  margin: 10px;
+  padding: 10px;
+  font-size: 16px;
+}
+
+button {
+  cursor: pointer;
+}
+
+p {
+  color: red;
+  font-weight: bold;
+}
