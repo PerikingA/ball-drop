@@ -1,5 +1,5 @@
 "use client"
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 type SportItems = {
@@ -20,10 +20,29 @@ const sportItems: SportItems = {
   tennis: '/tennis.png'
 };
 
+
 export default function Home() {
+
+  const initialTime = 30;
+
   const [sport, setSport] = useState<string>('');
   const [items, setItems] = useState<string[]>([]);
   const [error, setError] = useState<string>('');
+  // set initial time
+  const [timeLeft, setTimeLeft] = useState<number>(initialTime);
+  const [timerStarted, setTimerStarted] = useState<boolean>(false);
+
+  // countdown by 1 second
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (timerStarted && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft(prevTime => prevTime - 1);
+      }, 1000);
+    }
+
+    return () => clearInterval(interval);
+  }, [timerStarted, timeLeft]);
 
   const handleDrop = () => {
     if (sportItems[sport as keyof SportItems]) {
@@ -36,20 +55,49 @@ export default function Home() {
 
   const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
+      startTimer();
       handleDrop();
     }
   };
 
+  const startTimer = () => {
+    if (!timerStarted) {
+      setTimerStarted(true);
+    }
+  };
+
+  // reset timer back to initial value
+  const resetTimer = () => {
+    setTimeLeft(initialTime);
+    setTimerStarted(false);
+    setItems([]);
+  };
+
   return (
     <div style={{ position: 'relative', height: '100vh', overflow: 'hidden' }}>
-      <input
-        type="text"
-        value={sport}
-        onChange={(e) => setSport(e.target.value.toLowerCase())}
-        onKeyUp={handleKeyPress}
-        placeholder="Enter your favorite sport"
-      />
-      <button onClick={handleDrop}>Go</button>
+      <div style={{ position: 'absolute', top: '10px', left: '10px' }}>
+        <p>Time Left: {timeLeft} seconds</p>
+      </div>
+      <div style={{ marginTop: '50px', textAlign: 'center' }}>
+        <input
+          type="text"
+          value={sport}
+          onChange={(e) => setSport(e.target.value.toLowerCase())}
+          onKeyUp={handleKeyPress}
+          placeholder="Enter your favorite sport"
+          style={{ marginBottom: '10px' }}
+        />
+        <button 
+          onClick={() => {
+            startTimer();
+            handleDrop();
+          }} 
+          disabled={timeLeft === 0}
+        >
+          Go
+        </button>
+        <button onClick={resetTimer}>Reset</button>
+      </div>
       {error && <p>{error}</p>}
       {items.map((item, index) => (
         <motion.img
