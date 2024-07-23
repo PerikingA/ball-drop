@@ -6,12 +6,18 @@ type SportItems = {
   basketball: string;
   football: string;
   soccer: string;
+  baseball: string;
+  volleyball: string;
+  tennis: string;
 };
 
 const sportItems: SportItems = {
   basketball: '/basketball.png',
   football: '/football.png',
   soccer: '/soccer.png',
+  baseball: '/baseball.png',
+  volleyball: '/volleyball.png',
+  tennis: '/tennis.png'
 };
 
 export default function Home() {
@@ -28,12 +34,19 @@ export default function Home() {
     }
   };
 
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      handleDrop();
+    }
+  };
+
   return (
     <div style={{ position: 'relative', height: '100vh', overflow: 'hidden' }}>
       <input
         type="text"
         value={sport}
         onChange={(e) => setSport(e.target.value.toLowerCase())}
+        onKeyUp={handleKeyPress}
         placeholder="Enter your favorite sport"
       />
       <button onClick={handleDrop}>Go</button>
