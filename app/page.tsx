@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 type SportItems = {
@@ -25,15 +25,18 @@ const INITIAL_BALL_COUNT = 20; // Number of balls in the set
 export default function Home() {
   const initialTime = 30;
   const [sport, setSport] = useState<string>('');
-  const [items, setItems] = useState<{src: string, left: string}[]>([]);
+  const [items, setItems] = useState<{ id: number, src: string, left: string }[]>([]);
   const [error, setError] = useState<string>('');
   const [timeLeft, setTimeLeft] = useState<number>(initialTime);
   const [timerStarted, setTimerStarted] = useState<boolean>(false);
-  const [ballCount, setBallCount] = useState<number>(INITIAL_BALL_COUNT); 
+  const [ballCount, setBallCount] = useState<number>(INITIAL_BALL_COUNT);
+  const [basketPosition, setBasketPosition] = useState<number>(50); // Initial basket position (percentage)
+  const [score, setScore] = useState<number>(0);
+  const ballIdCounter = useRef<number>(0);
+  const caughtBalls = useRef<Set<number>>(new Set()); // Track caught balls
 
   // Calculate speed based on ball count
   const calculateSpeed = () => {
-    // Slowest speed for the first few seconds, increasing speed as time progresses
     const maxSpeed = 1; // Slowest speed
     const minSpeed = 0.35; // Fastest speed
     const speedRange = maxSpeed - minSpeed;
@@ -51,6 +54,7 @@ export default function Home() {
       dropInterval = setInterval(() => {
         if (sportItems[sport as keyof SportItems]) {
           const newBalls = Array(ballCount).fill(null).map(() => ({
+            id: ballIdCounter.current++,
             src: sportItems[sport as keyof SportItems],
             left: `${Math.random() * 100}%`
           }));
@@ -69,7 +73,7 @@ export default function Home() {
         clearInterval(timerInterval);
       };
     } else if (timeLeft === 0) {
-      setTimerStarted(false); 
+      setTimerStarted(false);
     }
 
     return () => clearInterval(dropInterval);
@@ -81,6 +85,7 @@ export default function Home() {
       setItems(prevItems => [
         ...prevItems,
         ...Array(ballCount).fill(null).map(() => ({
+          id: ballIdCounter.current++,
           src: sportItems[sport as keyof SportItems],
           left: `${Math.random() * 100}%`
         }))
@@ -102,17 +107,80 @@ export default function Home() {
   // Starts the timer and ensures the ball starts dropping
   const startTimer = () => {
     if (!timerStarted && sportItems[sport as keyof SportItems]) {
-      setTimerStarted(true); 
-      setTimeLeft(initialTime); 
+      setTimerStarted(true);
+      setTimeLeft(initialTime);
     }
   };
 
-  // Resets the timer and clears the sport input and items
+  // Resets the timer, score, and clears the sport input and items
   const resetTimer = () => {
-    setTimeLeft(initialTime); 
-    setTimerStarted(false); 
-    setItems([]); 
+    setTimeLeft(initialTime);
+    setTimerStarted(false);
+    setItems([]);
     setSport('');
+    setScore(0);
+    caughtBalls.current.clear();
+  };
+
+  // Track mouse movement to update basket position
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
+      const newX = (event.clientX / window.innerWidth) * 100;
+      setBasketPosition(newX);
+    };
+
+    if (timerStarted) {
+      window.addEventListener('mousemove', handleMouseMove);
+    } else {
+      window.removeEventListener('mousemove', handleMouseMove);
+    }
+
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [timerStarted]);
+
+  // Check for collision between ball and basket
+  useEffect(() => {
+    const handleCollision = () => {
+      const basket = document.getElementById('basket');
+      if (basket && timeLeft > 0) { // Check if timeLeft > 0
+        const basketRect = basket.getBoundingClientRect();
+
+        setItems(prevItems => {
+          return prevItems.filter(item => {
+            const ball = document.getElementById(`ball-${item.id}`);
+            if (ball && !caughtBalls.current.has(item.id)) {
+              const ballRect = ball.getBoundingClientRect();
+
+              if (
+                ballRect.bottom >= basketRect.top &&
+                ballRect.left >= basketRect.left &&
+                ballRect.right <= basketRect.right
+              ) {
+                caughtBalls.current.add(item.id); // Mark the ball as caught
+                setScore(prevScore => prevScore + 1);
+                return false; // Remove the ball
+              }
+            }
+            return true; // Keep the ball
+          });
+        });
+      }
+    };
+
+    const collisionInterval = setInterval(handleCollision, 100);
+
+    return () => clearInterval(collisionInterval);
+  }, [items, timeLeft]); // Add timeLeft to the dependency array
+
+  // Update sport and handle reset if timer is done
+  const handleSportChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newSport = e.target.value.toLowerCase();
+    if (timeLeft === 0 || sport !== newSport) {
+      resetTimer(); // Reset the game if timer is done or sport is changed
+    }
+    if (!timerStarted) { // Allow sport change only when timer is not running
+      setSport(newSport);
+    }
   };
 
   return (
@@ -120,34 +188,36 @@ export default function Home() {
       <div style={{ position: 'absolute', top: '10px', left: '10px' }}>
         <p>Time Left: {timeLeft} seconds</p>
       </div>
+      <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
+        <p>Score: {score}</p>
+      </div>
       <div style={{ marginTop: '50px', textAlign: 'center' }}>
-        <input
-          type="text"
-          value={sport}
-          onChange={(e) => {
-            if (!timerStarted) { // Allow sport change only when timer is not running
-              setSport(e.target.value.toLowerCase());
-            }
-          }}
-          onKeyUp={handleKeyPress}
-          placeholder="Enter your favorite sport"
-          style={{ marginBottom: '10px' }}
-          disabled={timerStarted} // Disable input field when timer is running
-        />
-        <button 
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <input
+            type="text"
+            value={sport}
+            onChange={handleSportChange}
+            onKeyUp={handleKeyPress}
+            placeholder="Enter your favorite sport"
+            style={{ marginBottom: '10px' }}
+            disabled={timerStarted} // Disable input field when timer is running
+          />
+          {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
+        </div>
+        <button
           onClick={() => {
             startTimer(); // Start the timer and drop the ball
-          }} 
-          disabled={timeLeft === 0 || timerStarted} 
+          }}
+          disabled={timeLeft === 0 || timerStarted}
         >
           Go
         </button>
         <button onClick={resetTimer}>Reset</button>
       </div>
-      {error && <p>{error}</p>}
       {items.map((item, index) => (
         <motion.img
-          key={`${item.src}-${index}`} // Unique key to ensure independent drops
+          key={item.id}
+          id={`ball-${item.id}`}
           src={item.src}
           alt="Dropping item"
           style={{
@@ -165,6 +235,20 @@ export default function Home() {
           transition={{ duration: calculateSpeed(), delay: index * 0.5 }}
         />
       ))}
+      {/* Bag */}
+      <img
+        id="basket"
+        src="/bag.png"
+        alt="Bag"
+        style={{
+          position: 'absolute',
+          bottom: '10px',
+          left: `${basketPosition}%`,
+          transform: 'translateX(-50%)',
+          width: '120px',
+          height: 'auto',
+        }}
+      />
     </div>
   );
 }
