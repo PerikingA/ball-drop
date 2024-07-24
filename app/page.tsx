@@ -2,14 +2,20 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
+type SportItem = { item: string, background: string };
+type LockerSportItem = { items: string[], background: string };
+
 type SportItems = {
-  basketball: { item: string, background: string };
-  football: { item: string, background: string };
-  soccer: { item: string, background: string };
-  baseball: { item: string, background: string };
-  volleyball: { item: string, background: string };
-  tennis: { item: string, background: string }; // Update type to include background image
+  basketball: SportItem;
+  football: SportItem;
+  soccer: SportItem;
+  baseball: SportItem;
+  volleyball: SportItem;
+  tennis: SportItem;
+  locker: LockerSportItem; // Updated to have items array
 };
+
+
 
 const sportItems: SportItems = {
   basketball: { item: '/basketball.png', background: '/basketball-bg.jpg' },
@@ -17,13 +23,18 @@ const sportItems: SportItems = {
   soccer: { item: '/soccer.png', background: '/soccer-bg.jpg' },
   baseball: { item: '/baseball.png', background: '/baseball-bg.jpg' },
   volleyball: { item: '/volleyball.png', background: '/vb-bg.jpg' },
-  tennis: { item: '/tennis.png', background: '/tennis-bg.jpg' } 
+  tennis: { item: '/tennis.png', background: '/tennis-bg.jpg' },
+  locker: { 
+    items: ['/basketball.png', '/football.png', '/soccer.png', '/baseball.png', '/volleyball.png', '/tennis.png'],
+    background: '/gym-locker.jpg' 
+  }
 };
 
-const INITIAL_BALL_COUNT = 20; // Number of balls in the set
+
+const INITIAL_BALL_COUNT = 10; // Number of balls in the set
 
 export default function Home() {
-  const initialTime = 7;
+  const initialTime = 25;
   const [sport, setSport] = useState<string>('');
   const [items, setItems] = useState<{ id: number, src: string, left: string }[]>([]);
   const [error, setError] = useState<string>('');
@@ -32,9 +43,10 @@ export default function Home() {
   const [ballCount, setBallCount] = useState<number>(INITIAL_BALL_COUNT);
   const [basketPosition, setBasketPosition] = useState<number>(50); // Initial basket position (percentage)
   const [score, setScore] = useState<number>(0);
-  const [backgroundImage, setBackgroundImage] = useState<string>(''); // New state for background image
+  const [backgroundImage, setBackgroundImage] = useState<string>('/gym-locker.jpg'); // New state for background image
   const ballIdCounter = useRef<number>(0);
   const caughtBalls = useRef<Set<number>>(new Set()); // Track caught balls
+  const [inputValue, setInputValue] = useState('');
 
   // Calculate speed based on ball count
   const calculateSpeed = () => {
@@ -49,26 +61,43 @@ export default function Home() {
   useEffect(() => {
     let dropInterval: NodeJS.Timeout;
     let timerInterval: NodeJS.Timeout;
-
+  
     if (timerStarted && timeLeft > 0) {
       // Add balls per second
       dropInterval = setInterval(() => {
-        if (sportItems[sport as keyof SportItems]) {
+        if (sport === 'locker') {
+          // Handle the locker room separately
+          const allBallImages = sportItems.locker.items;
+          const newBalls = Array(ballCount).fill(null).map(() => {
+            const randomImage = allBallImages[Math.floor(Math.random() * allBallImages.length)];
+            return {
+              id: ballIdCounter.current++,
+              src: randomImage, // src is a string for locker
+              left: `${Math.random() * 100}%`
+            };
+          });
+  
+          setItems(prevItems => [...prevItems, ...newBalls]);
+        } else if (sportItems[sport as keyof SportItems]) {
+          // Handle other sports
+          const sportItem = sportItems[sport as keyof SportItems] as SportItem;
           const newBalls = Array(ballCount).fill(null).map(() => ({
             id: ballIdCounter.current++,
-            src: sportItems[sport as keyof SportItems].item, // Use item image URL
+            src: sportItem.item, // src is a string for other sports
             left: `${Math.random() * 100}%`
           }));
-
+  
           setItems(prevItems => [...prevItems, ...newBalls]);
+        } else {
+          setError('Pick another sport');
         }
       }, 1000);
-
+  
       // Countdown timer
       timerInterval = setInterval(() => {
         setTimeLeft(prevTime => prevTime - 1);
       }, 1000);
-
+  
       return () => {
         clearInterval(dropInterval);
         clearInterval(timerInterval);
@@ -76,34 +105,47 @@ export default function Home() {
     } else if (timeLeft === 0) {
       setTimerStarted(false);
     }
-
+  
     return () => clearInterval(dropInterval);
   }, [timerStarted, timeLeft, sport, ballCount]);
-
-  // Handles ball drop based on the selected sport
-  const handleDrop = () => {
-    if (sportItems[sport as keyof SportItems]) {
-      setItems(prevItems => [
-        ...prevItems,
-        ...Array(ballCount).fill(null).map(() => ({
-          id: ballIdCounter.current++,
-          src: sportItems[sport as keyof SportItems].item, // Use item image URL
-          left: `${Math.random() * 100}%`
-        }))
-      ]);
-      setError('');
-    } else {
-      setError('Pick another sport');
-    }
-  };
+  
 
   // Handles "Enter" key press to start the timer and drop the ball
-  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter' && !timerStarted) {
-      startTimer(); // Start the timer when "Enter" is pressed
-      handleDrop(); // Drops balls immediately
+const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+  const newSport = event.currentTarget.value.toLowerCase();
+  
+  if (event.key === 'Enter') {
+    if (sportItems[newSport as keyof SportItems]) {
+      setError(''); // Clear the error if a valid sport is entered
+
+      if (newSport === sport) {
+        // Start the game if timer is not running and sport is valid
+        if (!timerStarted) {
+          resetTimer();
+          startTimer();
+          handleDrop();
+        }
+      } else if (newSport === 'locker') {
+        // Locker room
+        if (!timerStarted) {
+          resetTimer();
+          setSport('locker');
+          setBackgroundImage(sportItems.locker.background);
+        }
+      } else {
+        // Switch to a new sport
+        resetTimer();
+        setSport(newSport);
+        setBackgroundImage(sportItems[newSport as keyof SportItems].background);
+      }
+    } else {
+      setError('Invalid sport, pick another sport');
     }
-  };
+  }
+};
+
+  
+  
 
   // Starts the timer and ensures the ball starts dropping
   const startTimer = () => {
@@ -118,11 +160,40 @@ export default function Home() {
     setTimeLeft(initialTime);
     setTimerStarted(false);
     setItems([]);
-    setSport('');
     setScore(0);
     caughtBalls.current.clear();
-    setBackgroundImage(''); // Reset background image
   };
+
+  // Handle ball drop based on the selected sport
+  const handleDrop = () => {
+
+    if (sport === 'locker') {
+      // Drop balls with random images from the locker array
+      const allBallImages = sportItems.locker.items;
+      const newBalls = Array(ballCount).fill(null).map(() => {
+        const randomImage = allBallImages[Math.floor(Math.random() * allBallImages.length)];
+        return {
+          id: ballIdCounter.current++,
+          src: randomImage, // src is a string for locker
+          left: `${Math.random() * 100}%`
+        };
+      });
+      setItems(prevItems => [...prevItems, ...newBalls]);
+    } else if (sportItems[sport as keyof SportItems]) {
+      // Drop balls for the selected sport
+      const sportItem = sportItems[sport as keyof SportItems] as SportItem;
+      const newBalls = Array(ballCount).fill(null).map(() => ({
+        id: ballIdCounter.current++,
+        src: sportItem.item, // src is a string for other sports
+        left: `${Math.random() * 100}%`
+      }));
+      setItems(prevItems => [...prevItems, ...newBalls]);
+    } else {
+      setError('Pick another sport');
+    }
+  };
+  
+  
 
   // Track mouse movement to update basket position
   useEffect(() => {
@@ -141,49 +212,45 @@ export default function Home() {
   }, [timerStarted]);
 
   // Check for collision between ball and basket
-  useEffect(() => {
-    const handleCollision = () => {
-      const basket = document.getElementById('basket');
-      if (basket && timeLeft > 0) { // Check if timeLeft > 0
-        const basketRect = basket.getBoundingClientRect();
+useEffect(() => {
+  const handleCollision = () => {
+    const basket = document.getElementById('basket');
+    if (basket && timeLeft > 0) {
+      const basketRect = basket.getBoundingClientRect();
 
-        setItems(prevItems => {
-          return prevItems.filter(item => {
-            const ball = document.getElementById(`ball-${item.id}`);
-            if (ball && !caughtBalls.current.has(item.id)) {
-              const ballRect = ball.getBoundingClientRect();
+      setItems(prevItems => {
+        const newItems = prevItems.filter(item => {
+          const ball = document.getElementById(`ball-${item.id}`);
+          if (ball && !caughtBalls.current.has(item.id)) {
+            const ballRect = ball.getBoundingClientRect();
 
-              if (
-                ballRect.bottom >= basketRect.top &&
-                ballRect.left >= basketRect.left &&
-                ballRect.right <= basketRect.right
-              ) {
-                caughtBalls.current.add(item.id); // Mark the ball as caught
-                setScore(prevScore => prevScore + 1);
-                return false; // Remove the ball
-              }
+            if (
+              ballRect.bottom >= basketRect.top &&
+              ballRect.left >= basketRect.left &&
+              ballRect.right <= basketRect.right
+            ) {
+              caughtBalls.current.add(item.id);
+              setScore(prevScore => prevScore + 1);
+              return false; // Remove the ball
             }
-            return true; // Keep the ball
-          });
+          }
+          return true; // Keep the ball
         });
-      }
-    };
-
-    const collisionInterval = setInterval(handleCollision, 100);
-
-    return () => clearInterval(collisionInterval);
-  }, [items, timeLeft]); // Add timeLeft to the dependency array
-
-  // Update sport and handle reset if timer is done
-  const handleSportChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newSport = e.target.value.toLowerCase();
-    if (timeLeft === 0 || sport !== newSport) {
-      resetTimer(); // Reset the game if timer is done or sport is changed
+        
+        return newItems;
+      });
     }
-    if (!timerStarted) { // Allow sport change only when timer is not running
-      setSport(newSport);
-      setBackgroundImage(sportItems[newSport as keyof SportItems]?.background || ''); // Set background image based on sport
-    }
+  };
+
+  const collisionInterval = setInterval(handleCollision, 100);
+
+  return () => clearInterval(collisionInterval);
+}, [items, timeLeft]);
+
+
+  // Handle input value change
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(event.target.value);
   };
 
   return (
@@ -205,25 +272,32 @@ export default function Home() {
       </div>
       <div style={{ marginTop: '50px', textAlign: 'center' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <input
+          <input 
             type="text"
-            value={sport}
-            onChange={handleSportChange}
+            value={inputValue}
+            onChange={handleChange}
             onKeyUp={handleKeyPress}
-            placeholder="Enter your favorite sport"
+            placeholder="Enter a sport"
             style={{ marginBottom: '10px' }}
             disabled={timerStarted} // Disable input field when timer is running
           />
           {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
         </div>
-        <button
+        <button 
           onClick={() => {
-            startTimer(); // Start the timer and drop the ball
+            if (sportItems[sport as keyof SportItems] && sport === inputValue.toLowerCase()) {
+              setError(''); // Clear the error if the sport matches the background
+              startTimer();
+              handleDrop();
+            } else {
+              setError('Please enter a sport that matches the background.');
+            }
           }}
           disabled={timeLeft === 0 || timerStarted}
         >
           Go
         </button>
+
         <button onClick={resetTimer}>Reset</button>
       </div>
       {items.map((item, index) => (
