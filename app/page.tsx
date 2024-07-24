@@ -1,29 +1,29 @@
-"use client"
+"use client";
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 type SportItems = {
-  basketball: string;
-  football: string;
-  soccer: string;
-  baseball: string;
-  volleyball: string;
-  tennis: string;
+  basketball: { item: string, background: string };
+  football: { item: string, background: string };
+  soccer: { item: string, background: string };
+  baseball: { item: string, background: string };
+  volleyball: { item: string, background: string };
+  tennis: { item: string, background: string }; // Update type to include background image
 };
 
 const sportItems: SportItems = {
-  basketball: '/basketball.png',
-  football: '/football.png',
-  soccer: '/soccer.png',
-  baseball: '/baseball.png',
-  volleyball: '/volleyball.png',
-  tennis: '/tennis.png'
+  basketball: { item: '/basketball.png', background: '/basketball-bg.jpg' },
+  football: { item: '/football.png', background: '/football-bg.jpg' },
+  soccer: { item: '/soccer.png', background: '/soccer-bg.jpg' },
+  baseball: { item: '/baseball.png', background: '/baseball-bg.jpg' },
+  volleyball: { item: '/volleyball.png', background: '/vb-bg.jpg' },
+  tennis: { item: '/tennis.png', background: '/tennis-bg.jpg' } 
 };
 
 const INITIAL_BALL_COUNT = 20; // Number of balls in the set
 
 export default function Home() {
-  const initialTime = 30;
+  const initialTime = 7;
   const [sport, setSport] = useState<string>('');
   const [items, setItems] = useState<{ id: number, src: string, left: string }[]>([]);
   const [error, setError] = useState<string>('');
@@ -32,6 +32,7 @@ export default function Home() {
   const [ballCount, setBallCount] = useState<number>(INITIAL_BALL_COUNT);
   const [basketPosition, setBasketPosition] = useState<number>(50); // Initial basket position (percentage)
   const [score, setScore] = useState<number>(0);
+  const [backgroundImage, setBackgroundImage] = useState<string>(''); // New state for background image
   const ballIdCounter = useRef<number>(0);
   const caughtBalls = useRef<Set<number>>(new Set()); // Track caught balls
 
@@ -55,7 +56,7 @@ export default function Home() {
         if (sportItems[sport as keyof SportItems]) {
           const newBalls = Array(ballCount).fill(null).map(() => ({
             id: ballIdCounter.current++,
-            src: sportItems[sport as keyof SportItems],
+            src: sportItems[sport as keyof SportItems].item, // Use item image URL
             left: `${Math.random() * 100}%`
           }));
 
@@ -86,7 +87,7 @@ export default function Home() {
         ...prevItems,
         ...Array(ballCount).fill(null).map(() => ({
           id: ballIdCounter.current++,
-          src: sportItems[sport as keyof SportItems],
+          src: sportItems[sport as keyof SportItems].item, // Use item image URL
           left: `${Math.random() * 100}%`
         }))
       ]);
@@ -120,6 +121,7 @@ export default function Home() {
     setSport('');
     setScore(0);
     caughtBalls.current.clear();
+    setBackgroundImage(''); // Reset background image
   };
 
   // Track mouse movement to update basket position
@@ -180,11 +182,21 @@ export default function Home() {
     }
     if (!timerStarted) { // Allow sport change only when timer is not running
       setSport(newSport);
+      setBackgroundImage(sportItems[newSport as keyof SportItems]?.background || ''); // Set background image based on sport
     }
   };
 
   return (
-    <div style={{ position: 'relative', height: '100vh', overflow: 'hidden' }}>
+    <div 
+      style={{
+        position: 'relative', 
+        height: '100vh', 
+        overflow: 'hidden', 
+        backgroundImage: `url(${backgroundImage})`, 
+        backgroundSize: 'cover', 
+        backgroundPosition: 'center',
+      }}
+    >
       <div style={{ position: 'absolute', top: '10px', left: '10px' }}>
         <p>Time Left: {timeLeft} seconds</p>
       </div>
@@ -225,7 +237,7 @@ export default function Home() {
             top: 0,
             left: item.left, // Random horizontal position
             transform: 'translateX(-50%)',
-            width: '25px',
+            width: '35px',
             maxWidth: '100%',
             marginLeft: 'auto',
             marginRight: 'auto',
