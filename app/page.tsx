@@ -18,15 +18,15 @@ type SportItems = {
 
 
 const sportItems: SportItems = {
-  basketball: { item: '/basketball.png', background: '/basketball-bg.jpg' },
-  football: { item: '/football.png', background: '/football-bg.jpg' },
-  soccer: { item: '/soccer.png', background: '/soccer-bg.jpg' },
-  baseball: { item: '/baseball.png', background: '/baseball-bg.jpg' },
-  volleyball: { item: '/volleyball.png', background: '/vb-bg.jpg' },
-  tennis: { item: '/tennis.png', background: '/tennis-bg.jpg' },
+  basketball: { item: './basketball.png', background: './basketball-bg.jpg' },
+  football: { item: './football.png', background: './football-bg.jpg' },
+  soccer: { item: './soccer.png', background: './soccer-bg.jpg' },
+  baseball: { item: './baseball.png', background: './baseball-bg.jpg' },
+  volleyball: { item: './volleyball.png', background: './vb-bg.jpg' },
+  tennis: { item: './tennis.png', background: './tennis-bg.jpg' },
   locker: { 
-    items: ['/basketball.png', '/football.png', '/soccer.png', '/baseball.png', '/volleyball.png', '/tennis.png'],
-    background: '/gym-locker.jpg' 
+    items: ['./basketball.png', './football.png', './soccer.png', './baseball.png', './volleyball.png', './tennis.png'],
+    background: './gym-locker.jpg' 
   }
 };
 
