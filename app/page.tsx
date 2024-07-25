@@ -18,7 +18,7 @@ type SportItems = {
 
 
 const sportItems: SportItems = {
-  basketball: { item: '/basketball.png', background: '/basketball-bg.jpg' },
+  basketball: { item: './basketball.png', background: './basketball-bg.jpg' },
   football: { item: './football.png', background: './football-bg.jpg' },
   soccer: { item: './soccer.png', background: './soccer-bg.jpg' },
   baseball: { item: './baseball.png', background: './baseball-bg.jpg' },
@@ -318,7 +318,7 @@ useEffect(() => {
       {/* Bag */}
       <img
         id="basket"
-        src="/bag.png"
+        src="./bag.png"
         alt="Bag"
         style={{
           position: 'absolute',
