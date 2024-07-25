@@ -34,7 +34,7 @@ const sportItems: SportItems = {
 const INITIAL_BALL_COUNT = 10; // Number of balls in the set
 
 export default function Home() {
-  const initialTime = 35;
+  const initialTime = 30;
   const [sport, setSport] = useState<string>('');
   const [items, setItems] = useState<{ id: number, src: string, left: string }[]>([]);
   const [error, setError] = useState<string>('');
