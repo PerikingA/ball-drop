@@ -16,7 +16,6 @@ type SportItems = {
 };
 
 
-
 const sportItems: SportItems = {
   basketball: { item: '/basketball.png', background: '/basketball-bg.jpg' },
   football: { item: '/football.png', background: '/football-bg.jpg' },
