@@ -286,7 +286,7 @@ useEffect(() => {
         <button 
           onClick={() => {
             if (sportItems[sport as keyof SportItems] && sport === inputValue.toLowerCase()) {
-              setError(''); // Clear the error if the sport matches the background
+              // setError(''); // Clear the error if the sport matches the background
               startTimer();
               handleDrop();
             } else {
