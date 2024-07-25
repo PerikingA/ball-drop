@@ -43,7 +43,7 @@ export default function Home() {
   const [ballCount, setBallCount] = useState<number>(INITIAL_BALL_COUNT);
   const [basketPosition, setBasketPosition] = useState<number>(50); // Initial basket position (percentage)
   const [score, setScore] = useState<number>(0);
-  const [backgroundImage, setBackgroundImage] = useState<string>('/gym-locker.jpg'); // New state for background image
+  const [backgroundImage, setBackgroundImage] = useState<string>('./gym-locker.jpg'); // New state for background image
   const ballIdCounter = useRef<number>(0);
   const caughtBalls = useRef<Set<number>>(new Set()); // Track caught balls
   const [inputValue, setInputValue] = useState('');
@@ -324,7 +324,7 @@ useEffect(() => {
       {/* Bag */}
       <img
         id="basket"
-        src="/bag.png"
+        src="./bag.png"
         alt="Bag"
         style={{
           position: 'absolute',
