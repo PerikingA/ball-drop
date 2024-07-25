@@ -16,8 +16,9 @@ type SportItems = {
 };
 
 
+
 const sportItems: SportItems = {
-  basketball: { item: './basketball.png', background: './basketball-bg.jpg' },
+  basketball: { item: '/basketball.png', background: '/basketball-bg.jpg' },
   football: { item: './football.png', background: './football-bg.jpg' },
   soccer: { item: './soccer.png', background: './soccer-bg.jpg' },
   baseball: { item: './baseball.png', background: './baseball-bg.jpg' },
@@ -30,11 +31,10 @@ const sportItems: SportItems = {
 };
 
 
-
 const INITIAL_BALL_COUNT = 10; // Number of balls in the set
 
 export default function Home() {
-  const initialTime = 30;
+  const initialTime = 25;
   const [sport, setSport] = useState<string>('');
   const [items, setItems] = useState<{ id: number, src: string, left: string }[]>([]);
   const [error, setError] = useState<string>('');
@@ -108,16 +108,12 @@ export default function Home() {
   
     return () => clearInterval(dropInterval);
   }, [timerStarted, timeLeft, sport, ballCount]);
-  
 
-  // Handles "Enter" key press to start the timer and drop the ball
-const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
-  const newSport = event.currentTarget.value.toLowerCase();
-  
-  if (event.key === 'Enter') {
+
+  const startGame = (newSport: string) => {
     if (sportItems[newSport as keyof SportItems]) {
       setError(''); // Clear the error if a valid sport is entered
-
+  
       if (newSport === sport) {
         // Start the game if timer is not running and sport is valid
         if (!timerStarted) {
@@ -141,11 +137,17 @@ const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
     } else {
       setError('Invalid sport, pick another sport');
     }
-  }
-};
+  };
 
+  // Handles "Enter" key press to start the timer and drop the ball
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    const newSport = event.currentTarget.value.toLowerCase();
   
-  
+    if (event.key === 'Enter') {
+      startGame(newSport);
+    }
+  };
+
 
   // Starts the timer and ensures the ball starts dropping
   const startTimer = () => {
@@ -283,16 +285,8 @@ useEffect(() => {
           />
           {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
         </div>
-        <button 
-          onClick={() => {
-            if (sportItems[sport as keyof SportItems] && sport === inputValue.toLowerCase()) {
-              // setError(''); // Clear the error if the sport matches the background
-              startTimer();
-              handleDrop();
-            } else {
-              setError('Please enter a sport that matches the background.');
-            }
-          }}
+        <button
+          onClick={() => startGame(inputValue.toLowerCase())}
           disabled={timeLeft === 0 || timerStarted}
         >
           Go
@@ -324,7 +318,7 @@ useEffect(() => {
       {/* Bag */}
       <img
         id="basket"
-        src="./bag.png"
+        src="/bag.png"
         alt="Bag"
         style={{
           position: 'absolute',
